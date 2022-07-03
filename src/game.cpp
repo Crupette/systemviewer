@@ -21,7 +21,7 @@ Game::State Game::m_state = State::RUNNING;
 Game::WindowContexts Game::contexts;
 
 void
-Game::setup(unsigned w, unsigned h)
+Game::setup(unsigned w, unsigned h, const std::string &sysname)
 {
     KeyMan::loadKeybindsFrom("keybinds.csv");
 
@@ -32,22 +32,21 @@ Game::setup(unsigned w, unsigned h)
     unsigned int viewh = h - 1;
     unsigned int infow = 24;
     unsigned int infoh = 12;
-    unsigned int timeh = 10;
+    unsigned int timeh = h - infoh;
 
     TimeMan::init();
     m_contexts.emplace(WINCTX_GAME, WindowContext());
+    m_contexts.emplace(WINCTX_TITLE, WindowContext());
     WindowContext *gameContext = &m_contexts[WINCTX_GAME];
 
     gameContext->registerWindow(WINDOW_SYSTEMVIEW_ID, "System View", infow, 0, w - infow, viewh);
     gameContext->registerWindow(WINDOW_BODYINFO_ID, "Body Info", 0, 0, infow, infoh);
-    gameContext->registerWindow(WINDOW_EVENTS_ID, "Events", 0, infoh, infow, viewh - infoh - timeh);
     gameContext->registerWindow(WINDOW_TIMEMAN_ID, "Time", 0, viewh - timeh, infow, timeh);
-
     gameContext->registerWindow(WINDOW_SYSTEMVIEW_SEARCH_ID, "Search", infow, 0, (w - infow) / 4, viewh, true);
     m_currentContext = WINCTX_GAME;
 
     m_camera = std::make_unique<Camera>((*gameContext)[WINDOW_SYSTEMVIEW_ID].screen());
-    m_system = std::make_unique<System>();
+    m_system = std::make_unique<System>(sysname);
     m_systemView.view(m_system.get());
 
     KeyMan::registerBind('\x1B', BIND_G_ESCAPE, CTX_GLOBAL, "Escape from focused searchbox / window");

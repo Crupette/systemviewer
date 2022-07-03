@@ -32,6 +32,7 @@ public:
     bool hidden() const { return m_hidden; }
 };
 
+#define WINDOW_TITLE_ID "Title"
 #define WINDOW_SYSTEMVIEW_ID "Systemview"
 #define WINDOW_SYSTEMVIEW_SEARCH_ID "SystemviewSearch"
 #define WINDOW_BODYINFO_ID "Bodyinfo"

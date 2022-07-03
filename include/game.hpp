@@ -11,6 +11,7 @@
 #include <memory>
 
 #define WINCTX_GAME "Game"
+#define WINCTX_TITLE "Title"
 
 class Game
 {
@@ -19,7 +20,7 @@ public:
         STOPPED, RUNNING, RUNNING_INPUT, PAUSED, PAUSED_INPUT
     };
 
-    static void setup(unsigned w, unsigned h);
+    static void setup(unsigned w, unsigned h, const std::string &sysname);
     static void cleanup();
 
     static void turn();

@@ -11,7 +11,7 @@
 
 static double G = 6.6743 * std::pow(10, -11);
 
-ecs::Entity &
+void
 System::addOrbital(const std::string &name, 
            const std::string &orbitingName, 
            unsigned long a, 
@@ -25,63 +25,35 @@ System::addOrbital(const std::string &name,
     w *= (std::numbers::pi / 180.0);
 
     SystemTreeNode *treeNode = getNode(orbitingName);
-    ecs::Entity &newOrbital = m_entityMan.newEntity()
+    ecs::Entity newOrbital = m_entityMan.newEntity()
         .addComponent(ecs::PositionComponent{vex::vec2<long>{0, 0}})
         .addComponent(ecs::MassComponent{m})
-        .addComponent(ecs::OrbitalComponent{.origin = treeNode->entityId, .a = (long)a, .e = e, .w = w, .M = M, .T = 0, .v = 0})
         .addComponent(ecs::RenderCircleComponent{r})
         .addComponent(ecs::NameComponent{name});
-    treeNode->children.push_back({newOrbital.id, {}});
-    return newOrbital;
+    if(treeNode != nullptr) {
+        newOrbital.addComponent(ecs::OrbitalComponent{.origin = (unsigned)treeNode->entityId, .a = (long)a, .e = e, .w = w, .M = M, .T = 0, .v = 0});
+        treeNode->children.push_back({(int)newOrbital.id, {}});
+    }else{
+        m_systemTree.entityId = newOrbital.id;
+    }
 }
 
-System::System()
+System::System(const std::string &name)
 {
-    auto sol = m_entityMan.newEntity()
-        .addComponent(ecs::PositionComponent{vex::vec2<long>{0, 0}})
-        .addComponent(ecs::MassComponent{unit::solMass})
-        .addComponent(ecs::RenderCircleComponent{695700})
-        .addComponent(ecs::NameComponent{"Sol"});
-    m_systemTree.entityId = sol.id;
+    m_systemTree.entityId = -1;
+    csv::CSVFile<',', std::string, std::string, double, double, double, double, double, double, std::string> bodyData(name);
+    for(auto &body : bodyData.get()) {
+        std::string name = std::get<0>(body);
+        std::string orbiting = std::get<1>(body);
+        double sma = std::get<2>(body) * unit::AU;
+        double e = std::get<3>(body);
+        unit::Mass m = unit::earthMass * std::get<4>(body);
+        double r = std::get<5>(body) * unit::earthRad;
+        double M = std::get<6>(body);
+        double w = std::get<7>(body);
 
-    csv::CSVFile<',', std::string, std::string, double, double, double, double, double, double> planetData("data/sol_planets.csv");
-    for(auto &planet : planetData.get()) {
-        std::string name = std::get<0>(planet);
-        std::string orbiting = std::get<1>(planet);
-        double sma = std::get<2>(planet) * unit::AU;
-        double e = std::get<3>(planet);
-        unit::Mass m = unit::earthMass * std::get<4>(planet);
-        double r = std::get<5>(planet) * unit::earthRad;
-        double M = std::get<6>(planet);
-        double w = std::get<7>(planet);
+        if(name == "Missing") name = std::get<8>(body);
         addOrbital(name, orbiting, sma, e, m, r, M, w);
-    }
-
-    csv::CSVFile<',', std::string, std::string, double, double, double, double, double, double> satelliteData("data/sol_satellites.csv");
-    for(auto &satellite : satelliteData.get()) {
-        std::string name = std::get<0>(satellite);
-        std::string orbiting = std::get<1>(satellite);
-        double sma = std::get<2>(satellite) * unit::AU;
-        double e = std::get<3>(satellite);
-        unit::Mass m = unit::earthMass * std::get<4>(satellite);
-        double r = std::get<5>(satellite) * unit::earthRad;
-        double M = std::get<6>(satellite);
-        double w = std::get<7>(satellite);
-        addOrbital(name, orbiting, sma, e, m, r, M, w);
-    }
-
-    csv::CSVFile<',', std::string, double, double, double, double, double, std::string> asteroidData("data/sol_asteroids.csv");
-    for(auto &asteroid : asteroidData.get()) {
-        std::string name = std::get<0>(asteroid);
-        if(name == "Missing") name = std::get<6>(asteroid);
-        addOrbital(name, 
-                   "Sol", 
-                   (unsigned long)(std::get<1>(asteroid) * unit::AU),
-                   std::get<2>(asteroid),
-                   unit::Mass(0),
-                   (unsigned)std::get<3>(asteroid),
-                   std::get<4>(asteroid),
-                   std::get<5>(asteroid));
     }
 }
 
@@ -161,6 +133,7 @@ System::traverseSystemTree(SystemTreeNode &node, const std::string &name)
 System::SystemTreeNode *
 System::getNode(const std::string &name)
 {
+    if(m_systemTree.entityId == -1) return nullptr;
     SystemTreeNode *treeRes = traverseSystemTree(m_systemTree, name);
     if(treeRes == nullptr)
         treeRes = &m_systemTree;

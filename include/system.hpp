@@ -11,19 +11,19 @@ class System {
 private:
     friend class SystemView;
     struct SystemTreeNode {
-        unsigned entityId;
+        int entityId;
         std::list<SystemTreeNode> children;
     };
     SystemTreeNode m_systemTree;
     ecs::EntityMan m_entityMan;
 
-    ecs::Entity &addOrbital(const std::string &name, const std::string &orbitingName, unsigned long a, double e, unit::Mass m, unsigned r, double M, double w);
+    void addOrbital(const std::string &name, const std::string &orbitingName, unsigned long a, double e, unit::Mass m, unsigned r, double M, double w);
     void tickOrbitals(unit::Time time);
 
     SystemTreeNode *traverseSystemTree(SystemTreeNode &node, const std::string &name);
     SystemTreeNode *getNode(const std::string &name);
 public:
-    System();
+    System(const std::string &name);
 
     void update();
 
